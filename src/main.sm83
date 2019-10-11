@@ -1,0 +1,80 @@
+SECTION "rom",ROM0[$100]
+nop
+jp init
+
+SECTION "init",ROM0[$150]
+init:
+    ld sp, $e000
+    call wait_vblank
+    ld a, 0
+    ld [$ff40], a
+
+    ; copy tiles to vram
+    ld hl, $70ff
+    ld de, $80ff
+copyloop:
+    ld a, [hl-]
+    cpl
+    ld [de], a
+    dec e
+    jr nz, copyloop
+    ld a, [hl-]
+    cpl 
+    ld [de], a
+    ; zero out tilemap
+    ld a, $ff
+    ld b, 04
+    ld de, $9bff
+zeroloop:
+    ld [de], a
+    dec e
+    jr nz, zeroloop
+    ld [de], a
+    dec de
+    dec b
+    jr nz, zeroloop
+
+    ld a, 0
+    ld [$9909], a
+    inc a
+    ld [$990a], a
+    inc a
+    ld [$9929], a    
+    inc a
+    ld [$992a], a
+    ld a, $e4
+    ld [$ff47], a
+    ld a, $91
+    ld [$ff40], a
+    ld b, $ff
+    ld c, $ff
+    ld d, $ff
+    ld e, $ff
+    ld h, $ff
+    ld l, $ff
+    ld a, $ff
+.short_delay:
+    dec b
+    jr nz, .short_delay
+
+hang:
+    di
+    halt 
+    jr hang
+
+
+wait_vblank:
+    ld a, 144
+    ld [$ff45], a
+    ld b, $ff
+.short_delay:
+    dec b
+    jr nz, .short_delay
+wait_vblank_loop:
+    ld a, [$ff41]
+    and a, $04
+    jp z, wait_vblank_loop
+    ret
+
+section "gfx",ROM0[$7000]
+incbin "build/gb/gb_pocket.2bpp"
