@@ -1,3 +1,5 @@
+INCLUDE "tiles.inc"
+
 SECTION "rom",ROM0[$100]
 nop
 jp init
@@ -7,11 +9,16 @@ init:
     ld sp, $e000
     call wait_vblank
     ld a, 0
-    ld [$ff40], a
+    ld [$ff40], a ;; disable lcd
+    ld a, $e4
+    ld [$ff47], a ;; set palette
 
-    ; copy tiles to vram
-    ld hl, $70ff
-    ld de, $80ff
+    ;;;;
+    ;;;; copy tiles to vram
+    ;;;;
+    ld b, 4
+    ld hl, $73ff
+    ld de, $83ff
 copyloop:
     ld a, [hl-]
     cpl
@@ -21,6 +28,25 @@ copyloop:
     ld a, [hl-]
     cpl 
     ld [de], a
+    dec de
+    dec b
+    jr nz, copyloop
+
+    ld b, 16
+    ld hl, $4fff
+    ld de, $cfff
+copyloop2:
+    ld a, [hl-]
+    ld [de], a
+    dec e
+    jr nz, copyloop2
+    ld a, [hl-]
+    ld [de], a
+    dec de
+    dec b
+    jr nz, copyloop2
+
+
     ; zero out tilemap
     ld a, $ff
     ld b, 04
@@ -34,47 +60,26 @@ zeroloop:
     dec b
     jr nz, zeroloop
 
-    ld a, 0
-    ld [$9909], a
-    inc a
-    ld [$990a], a
-    inc a
-    ld [$9929], a    
-    inc a
-    ld [$992a], a
-    ld a, $e4
-    ld [$ff47], a
+    ld a, IMG_CLOCK
+    ld de, $109
+    call put_img_16x16
+
     ld a, $91
-    ld [$ff40], a
-    ld b, $ff
-    ld c, $ff
-    ld d, $ff
-    ld e, $ff
-    ld h, $ff
-    ld l, $ff
-    ld a, $ff
-.short_delay:
-    dec b
-    jr nz, .short_delay
+    ld [$ff40], a ;; enable lcd
+
+    call short_delay
+
+    jp $c000
 
 hang:
     di
     halt 
     jr hang
 
+include "common.inc"
 
-wait_vblank:
-    ld a, 144
-    ld [$ff45], a
-    ld b, $ff
-.short_delay:
-    dec b
-    jr nz, .short_delay
-wait_vblank_loop:
-    ld a, [$ff41]
-    and a, $04
-    jp z, wait_vblank_loop
-    ret
+section "bootcart",ROM0[$4000]
+incbin "build/gb/bootcart.out"
 
 section "gfx",ROM0[$7000]
-incbin "build/gb/gb_pocket.2bpp"
+incbin "build/gb/tilemap.2bpp"

@@ -1,0 +1,1 @@
+SECTION "prog",ROM0[$0000]

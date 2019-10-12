@@ -1,0 +1,62 @@
+INCLUDE "tiles.inc"
+INCLUDE "ram.inc"
+
+SECTION "prog",ROM0[$0000]
+
+boot:
+    RamCall wait_vblank
+    ld a, IMG_FLASH_CART
+    ld de, $c9
+    RamCall put_img_16x16
+    ld de, $109
+    RamCall put_uparrow
+    ld a, IMG_GB_POCKET
+    ld de, $149
+    RamCall put_img_16x16
+
+wait_removed:
+    ld a, [$0104]
+    cp $ff
+    jr nz, wait_removed
+
+    ld de, $109
+    RamCall put_downarrow
+
+wait_inserted:
+    ld a, [$0104]
+    cp $ce
+    jr nz, wait_inserted
+
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+    ld a, [$0104]
+    cp $ce
+    jr nz, wait_inserted
+
+    ld de, $109
+    RamCall put_check
+
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+
+    ld bc, $01b0
+    push bc
+    pop af
+    ld bc, $0013
+    ld de, $00d8
+    ld hl, $014d
+    ld sp, $fffe
+    jp $0100
+
+hang:
+    di
+    halt 
+    jr hang
+
+INCLUDE "common.inc"
+
+
