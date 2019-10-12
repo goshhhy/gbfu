@@ -8,24 +8,28 @@ boot:
     ld a, IMG_FLASH_CART
     ld de, $c9
     RamCall put_img_16x16
-    ld de, $109
-    RamCall put_uparrow
     ld a, IMG_GB_POCKET
     ld de, $149
     RamCall put_img_16x16
 
 wait_removed:
+    RamCall wait_vblank
+    ld de, $109
+    RamCall put_uparrow
+.loop:
     ld a, [$0104]
     cp $ff
-    jr nz, wait_removed
+    jr nz, .loop
 
+    RamCall wait_vblank
     ld de, $109
     RamCall put_downarrow
 
 wait_inserted:
+    RamCall short_delay
     ld a, [$0104]
-    cp $ce
-    jr nz, wait_inserted
+    cp $ff
+    jr z, wait_inserted
 
     RamCall short_delay
     RamCall short_delay
@@ -33,16 +37,33 @@ wait_inserted:
     RamCall short_delay
     ld a, [$0104]
     cp $ce
-    jr nz, wait_inserted
+    jr nz, wait_removed
 
+    RamCall wait_vblank
+    ld de, $c9
+    RamCall put_blank
     ld de, $109
     RamCall put_check
+    ld de, $149
+    RamCall put_blank
+    RamCall wait_vblank
 
+wait_1_sec:
+    ld b, 60
+.loop:
+    ld a, b
+    ld [$ff01], a
+    ld a, $81
+    ld [$ff02], a
     RamCall short_delay
-    RamCall short_delay
-    RamCall short_delay
-    RamCall short_delay
+    RamCall wait_vblank
+    dec b
+    jr nz, .loop
+    ld a, [$0104]
+    cp $ce
+    jr nz, wait_removed
 
+ 
     ld bc, $01b0
     push bc
     pop af

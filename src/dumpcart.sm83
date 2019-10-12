@@ -1,0 +1,178 @@
+INCLUDE "tiles.inc"
+INCLUDE "ram.inc"
+
+SECTION "prog",ROM0[$0000]
+
+boot:
+    RamCall wait_vblank
+    ld a, IMG_FLASH_CART
+    ld de, $c9
+    RamCall put_img_16x16
+    ld a, IMG_GB_POCKET
+    ld de, $149
+    RamCall put_img_16x16
+
+wait_removed:
+    RamCall wait_vblank
+    ld de, $109
+    RamCall put_uparrow
+.loop:
+    ld a, [$0104]
+    cp $ff
+    jr nz, .loop
+
+    RamCall wait_vblank
+    ld de, $109
+    RamCall put_downarrow
+
+wait_inserted:
+    RamCall short_delay
+    ld a, [$0104]
+    cp $ff
+    jr z, wait_inserted
+
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+    RamCall short_delay
+    ld a, [$0104]
+    cp $ce
+    jr nz, wait_removed
+    ld a, [$0105]
+    cp $ed
+    jr nz, wait_removed
+    ld a, [$0106]
+    cp $66
+    jr nz, wait_removed
+    ld a, [$0107]
+    cp $66
+    jr nz, wait_removed
+    ld a, [$0108]
+    cp $cc
+    jr nz, wait_removed
+
+
+    RamCall wait_vblank
+    ld de, $c9
+    RamCall put_blank
+    ld de, $109
+    RamCall put_check
+    ld de, $149
+    RamCall put_blank
+    RamCall wait_vblank
+
+    RamCall wait_1_sec
+    ld a, [$0104]
+    cp $ce
+    jr nz, wait_removed
+
+    ;;
+    ;; wait for connection 
+    ;; 
+    ld b, $ff
+    RamCall wait_vblank
+    ld a, IMG_GB_POCKET
+    ld de, $107
+    RamCall put_img_16x16
+    ld a, IMG_PC
+    ld de, $10b
+    RamCall put_img_16x16
+    ld a, IMG_CABLE
+    ld de, $109
+    RamCall put_img_16x16
+await_connection:
+    ld a, $5a
+    ld [$ff01], a
+    ld a, $81
+    ld [$ff02], a
+    RamCall short_delay
+    ld a, $5a
+    ld [$ff01], a
+    ld a, $81
+    ld [$ff02], a
+    RamCall short_delay
+    ld a, [$ff01]
+    cp $a5
+    jr z, .connected
+.toggle_icon:
+    RamCall wait_1_sec
+    ld de, $109
+    ld a, b
+    cpl
+    ld b, a
+    cp $ff
+    jr nz, .cable
+.blank:
+    ld a, IMG_CABLE
+    RamCall put_img_16x16
+    jr await_connection
+.cable:
+    ld a, IMG_BLANK
+    RamCall put_blank
+    jr await_connection
+.connected:
+    RamCall wait_vblank
+    ld de, $109
+    RamCall put_rightarrow
+
+load_progress_bar:
+    ld a, IMG_PROG_0
+    ld c, $14
+    ld hl, $99a0
+.loop:
+    dec c
+    ld [hl+], a
+    jr nz, .loop
+
+    ;;
+    ;; dump rom
+    ;;  
+dumprom:
+    ld hl, $0000
+    ld bc, $0000
+    ld de, $99a0
+.loop:
+    ld a, [hl+]
+    ld [$ff01], a
+    ld a, $81
+    ld [$ff02], a
+    RamCall short_delay
+    ld a, h
+    cp $80
+    jr z, .end
+    inc bc
+    ld a, $02
+    cp b
+    jr nz, .loop
+    ld a, $00
+    cp c
+    jr nz, .loop
+    ld bc, $0000
+    push hl
+    push de
+    pop hl
+    RamCall wait_vblank
+    ld a, [hl]
+    inc a
+    ld [hl], a
+    pop hl
+    cp IMG_PROG_3
+    jr nz, .loop
+    inc de
+    jr .loop
+
+.end:
+    RamCall wait_vblank
+    ld de, $107
+    RamCall put_blank
+    ld de, $109
+    RamCall put_check
+    ld de, $10b
+    RamCall put_blank
+
+hang:
+    di
+    halt 
+    jr hang
+
+INCLUDE "common.inc"

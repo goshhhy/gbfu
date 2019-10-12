@@ -63,6 +63,40 @@ put_downarrow:
     pop hl
     ret
 
+put_rightarrow:
+    push hl
+    ld hl, $9800
+    add hl, de
+    ld de, $20
+    ld a, IMG_ARROW_TAIL_2
+    ld [hl+], a
+    ld a, IMG_ARROW_HEAD_1
+    ld [hl-], a
+    add hl, de
+    ld a, IMG_ARROW_TAIL_3
+    ld [hl+], a
+    ld a, IMG_ARROW_HEAD_3
+    ld [hl], a
+    pop hl
+    ret
+
+put_blank:
+    push hl
+    ld hl, $9800
+    add hl, de
+    ld de, $20
+    ld a, IMG_BLANK
+    ld [hl+], a
+    ld a, IMG_BLANK
+    ld [hl-], a
+    add hl, de
+    ld a, IMG_BLANK
+    ld [hl+], a
+    ld a, IMG_BLANK
+    ld [hl], a
+    pop hl
+    ret
+
 ;; all except flags preserved
 short_delay:
     push bc
@@ -73,7 +107,7 @@ short_delay:
     pop bc
     ret
 
-;; clobbers a
+;; clobbers af
 wait_vblank:
     push bc
     ld a, 144
@@ -86,5 +120,16 @@ wait_vblank_loop:
     ld a, [$ff41]
     and a, $04
     jr z, wait_vblank_loop
+    pop bc
+    ret
+
+wait_1_sec:
+    push bc
+    ld b, 60
+.loop:
+    RamCall short_delay
+    RamCall wait_vblank
+    dec b
+    jr nz, .loop
     pop bc
     ret

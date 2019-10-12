@@ -15,7 +15,11 @@ build/gb/bootcart.out: build/gb/bootcart.o
 	rgblink -dto $@ $^
 	truncate -s 4096 $@ 
 
-build/gb/flashutil.out: build/gb/bootcart.out build/gb/main.o
+build/gb/dumpcart.out: build/gb/dumpcart.o
+	rgblink -dto $@ $^
+	truncate -s 4096 $@ 
+
+build/gb/flashutil.out: build/gb/dumpcart.out build/gb/main.o
 	rgblink -dto $@ build/gb/main.o
 
 flashutil.gb: build/gb/flashutil.out
